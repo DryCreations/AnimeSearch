@@ -60,6 +60,52 @@
                       "
                     ></v-img>
                   </v-card-text>
+                  <v-divider></v-divider>
+
+                  <v-expand-transition>
+                    <v-card-text v-if="result.show">
+                      <a
+                        v-bind:href="
+                          'https://anilist.co/anime/' + result.anilist_id
+                        "
+                      >
+                        {{
+                          result.anilist_data.title.native +
+                            ": " +
+                            result.anilist_data.title.english
+                        }}
+                      </a>
+                      <p>
+                        {{
+                          result.anilist_data.startDate.year +
+                            "-" +
+                            result.anilist_data.startDate.year +
+                            " " +
+                            result.anilist_data.status
+                        }}
+                      </p>
+                      <p>
+                        {{
+                          result.anilist_data.season +
+                            " " +
+                            result.anilist_data.seasonYear
+                        }}
+                      </p>
+                      <p>{{ result.anilist_data.episodes + " episodes" }}</p>
+
+                      <blockquote>
+                        {{ result.anilist_data.description }}
+                      </blockquote>
+                    </v-card-text>
+                  </v-expand-transition>
+                  <v-divider></v-divider>
+                  <v-card-actions class="justify-center">
+                    <v-btn icon @click="result.show = !result.show">
+                      <v-icon>{{
+                        result.show ? "mdi-chevron-up" : "mdi-chevron-down"
+                      }}</v-icon>
+                    </v-btn>
+                  </v-card-actions>
                 </v-card>
               </v-slide-y-transition>
             </template>
@@ -146,8 +192,65 @@ export default {
       })
         .then(res => res.json())
         .then(result => {
-          outerScope.searchResults = result.docs;
-          // console.log(result);
+          result.docs.forEach(r => {
+            let query = `
+            query ($id: Int) {
+              Media (id: $id, type: ANIME) {
+                id
+                siteUrl
+                title {
+                  english
+                  native
+                }
+                description
+                season
+                seasonYear
+                startDate {
+                  year
+                  month
+                  day
+                }
+                endDate {
+                  year
+                  month
+                  day
+                }
+                status
+                episodes
+                duration
+              }
+            }
+            `;
+
+            let variables = {
+              id: r.anilist_id
+            };
+
+            let url = "https://graphql.anilist.co",
+              options = {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Accept: "application/json"
+                },
+                body: JSON.stringify({
+                  query: query,
+                  variables: variables
+                })
+              };
+
+            fetch(url, options)
+              .then(aniResp => aniResp.json())
+              .then(data => {
+                r.anilist_data = data.data.Media;
+                r.show = false;
+                outerScope.searchResults.push(r);
+                console.log(r);
+              })
+              .catch(error => {
+                console.log(error);
+              });
+          });
         });
     }
   },
