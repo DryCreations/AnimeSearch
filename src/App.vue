@@ -19,15 +19,15 @@
                       @change="fileChange"
                       v-model="searchImg"
                     ></v-file-input>
-                    <v-btn v-bind:disabled="!searchImgURL" @click="searchImage"
+                    <v-btn v-bind:disabled="!searchImgURL || searching" @click="searchImage"
                       >Search</v-btn
                     >
                   </v-form>
                 </v-card-text>
               </div>
             </v-card>
-            <template v-for="(result, index) in searchResults">
-              <v-slide-y-transition v-bind:key="index">
+            <template v-for="(result) in searchResults">
+              <v-slide-y-transition v-bind:key="result.anilist_id">
                 <v-card class="mt-5">
                   <v-toolbar dark>
                     <v-toolbar-title>{{
@@ -137,7 +137,7 @@ export default {
   },
   methods: {
     fileChange() {
-      console.log('test')
+      // console.log('test')
       if(this.searchImg) {
         this.searchResults = [];
         let reader = new FileReader();
@@ -202,6 +202,9 @@ export default {
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
       let queryAniList = function(result) {
+        if (result.length == 0) {
+          outerScope.searching = false;
+        }
           result.docs.forEach(r => {
             let query = `
             query ($id: Int) {
@@ -255,6 +258,9 @@ export default {
                 r.anilist_data = data.data.Media;
                 r.show = false;
                 outerScope.searchResults.push(r);
+                outerScope.searchResults.sort((a,b) => {
+                  return b.similarity - a.similarity;
+                });
                 // console.log(r);
                 outerScope.searching = false;
               });
@@ -271,9 +277,13 @@ export default {
           headers: { "Content-Type": "application/json" }
         })
           .then(res => res.json())
-          .then(queryAniList);
+          .then(queryAniList).catch(() => {
+            outerScope.searching = false;
+          });
       } else {
-        fetch("https://trace.moe/api/search?url=" + this.searchImgURL).then(res => res.json()).then(queryAniList);
+        fetch("https://trace.moe/api/search?url=" + this.searchImgURL).then(res => res.json()).then(queryAniList).catch(() => {
+          outerScope.searching=false;
+        });
       }
 
     }
