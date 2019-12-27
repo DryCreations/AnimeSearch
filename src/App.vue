@@ -67,17 +67,17 @@ export default {
     onDrop(e) {
       const files = e.target.files || e.dataTransfer.files;
       if (!files.length) {
-        let textURL = e.dataTransfer.getData("text");
-        if (textURL != "") {
-          let outerScope = this;
-          this.showImg = false;
-          this.searchImg = null;
-          this.searchImgURL = textURL;
-
-          setTimeout(function() {
-            outerScope.showImg = true;
-          }, 100);
-        }
+        // let textURL = e.dataTransfer.getData("text");
+        // if (textURL != "") {
+        //   let outerScope = this;
+        //   this.showImg = false;
+        //   this.searchImg = null;
+        //   this.searchImgURL = textURL;
+        //
+        //   setTimeout(function() {
+        //     outerScope.showImg = true;
+        //   }, 100);
+        // } cors does not let this work
 
         return;
       }
