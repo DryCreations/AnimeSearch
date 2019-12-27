@@ -26,6 +26,43 @@
                 </v-card-text>
               </div>
             </v-card>
+            <template v-for="(result, index) in searchResults">
+              <v-slide-y-transition v-bind:key="index">
+                <v-card class="mt-5">
+                  <v-toolbar dark>
+                    <v-toolbar-title>{{
+                      result.title_native + ": " + result.title_english
+                    }}</v-toolbar-title>
+                  </v-toolbar>
+                  <v-card-title>
+                    {{
+                      isNaN(result.episode)
+                        ? result.episode
+                        : "EP#" + (result.episode || "0")
+                    }}
+                    <v-spacer></v-spacer>
+                    {{ "~" + Math.floor(result.at / 60) + "min" }}
+                  </v-card-title>
+                  <v-card-text>
+                    <p>
+                      {{ Math.floor(result.similarity * 100) + "% Similarity" }}
+                    </p>
+                    <v-img
+                      v-bind:src="
+                        'https://trace.moe/thumbnail.php?anilist_id=' +
+                          result.anilist_id +
+                          '&file=' +
+                          encodeURIComponent(result.filename) +
+                          '&t=' +
+                          result.at +
+                          '&token=' +
+                          result.tokenthumb
+                      "
+                    ></v-img>
+                  </v-card-text>
+                </v-card>
+              </v-slide-y-transition>
+            </template>
           </v-flex>
         </v-layout>
       </v-container>
@@ -41,11 +78,13 @@ export default {
     return {
       searchImg: null,
       searchImgURL: "",
-      showImg: false
+      showImg: false,
+      searchResults: []
     };
   },
   methods: {
     fileChange() {
+      this.searchResults = [];
       let reader = new FileReader();
       var outerScope = this;
       outerScope.showImg = false;
@@ -56,11 +95,12 @@ export default {
           outerScope.searchImgURL = reader.result;
           setTimeout(function() {
             outerScope.showImg = true;
-          }, 100);
+          }, 500);
         },
         false
       );
-      if (this.searchImg) {
+      if (this.searchImg && this.searchImg.name) {
+        // console.log(this.searchImg)
         reader.readAsDataURL(this.searchImg);
       }
     },
@@ -77,7 +117,7 @@ export default {
         //   setTimeout(function() {
         //     outerScope.showImg = true;
         //   }, 100);
-        // } cors does not let this work
+        // } cors does not let this work, but there is a different api request that takes a link
 
         return;
       }
@@ -91,6 +131,7 @@ export default {
       img.crossOrigin = "Anonymous";
       img.src = this.searchImgURL;
 
+      let outerScope = this;
       // console.log(img);
 
       var canvas = document.createElement("canvas");
@@ -105,7 +146,8 @@ export default {
       })
         .then(res => res.json())
         .then(result => {
-          console.log(result);
+          outerScope.searchResults = result.docs;
+          // console.log(result);
         });
     }
   },
