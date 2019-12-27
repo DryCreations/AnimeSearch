@@ -137,42 +137,49 @@ export default {
   },
   methods: {
     fileChange() {
-      this.searchResults = [];
-      let reader = new FileReader();
-      var outerScope = this;
-      outerScope.showImg = false;
-      outerScope.searchImgURL = "";
-      reader.addEventListener(
-        "load",
-        function() {
-          outerScope.searchImgURL = reader.result;
-          setTimeout(function() {
-            outerScope.showImg = true;
-          }, 500);
-        },
-        false
-      );
-      if (this.searchImg && this.searchImg.name) {
-        // console.log(this.searchImg)
-        reader.readAsDataURL(this.searchImg);
+      console.log('test')
+      if(this.searchImg) {
+        this.searchResults = [];
+        let reader = new FileReader();
+        var outerScope = this;
+        outerScope.showImg = false;
+        outerScope.searchImgURL = "";
+        reader.addEventListener(
+          "load",
+          function() {
+            outerScope.searchImgURL = reader.result;
+            setTimeout(function() {
+              outerScope.showImg = true;
+            }, 500);
+          },
+          false
+        );
+        if (this.searchImg.name) {
+          // console.log(this.searchImg)
+          reader.readAsDataURL(this.searchImg);
+        }
       }
+
     },
     onDrop(e) {
       const files = e.target.files || e.dataTransfer.files;
       if (!files.length) {
-        // let textURL = e.dataTransfer.getData("text");
-        // if (textURL != "") {
-        //   let outerScope = this;
-        //   this.showImg = false;
-        //   this.searchImg = null;
-        //   this.searchImgURL = textURL;
-        //
-        //   setTimeout(function() {
-        //     outerScope.showImg = true;
-        //   }, 100);
-        // } cors does not let this work, but there is a different api request that takes a link
+        let textURL = e.dataTransfer.getData("text");
+        if (textURL != "") {
+          let outerScope = this;
+          this.searchImg = null;
+          this.showImg = false;
+          this.searchImgURL = textURL;
+
+          this.searchResults = [];
+
+          setTimeout(function() {
+            outerScope.showImg = true;
+          }, 100);
+        }
 
         return;
+        // this.fileChange();
       }
       this.searchImg = files[0];
       this.fileChange();
@@ -193,13 +200,8 @@ export default {
       canvas.height = img.naturalHeight;
       var ctx = canvas.getContext("2d");
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      fetch("https://trace.moe/api/search", {
-        method: "POST",
-        body: JSON.stringify({ image: canvas.toDataURL("image/jpeg", 0.8) }),
-        headers: { "Content-Type": "application/json" }
-      })
-        .then(res => res.json())
-        .then(result => {
+
+      let queryAniList = function(result) {
           result.docs.forEach(r => {
             let query = `
             query ($id: Int) {
@@ -260,7 +262,20 @@ export default {
             //   console.log(error);
             // })
           });
-        });
+      }
+
+      if (this.searchImg) {
+        fetch("https://trace.moe/api/search", {
+          method: "POST",
+          body: JSON.stringify({ image: canvas.toDataURL("image/jpeg", 0.8) }),
+          headers: { "Content-Type": "application/json" }
+        })
+          .then(res => res.json())
+          .then(queryAniList);
+      } else {
+        fetch("https://trace.moe/api/search?url=" + this.searchImgURL).then(res => res.json()).then(queryAniList);
+      }
+
     }
   },
   mounted() {
