@@ -132,13 +132,14 @@ export default {
       searchImgURL: "",
       showImg: false,
       searchResults: [],
-      searching: false
+      searching: false,
+      dropFlag:false
     };
   },
   methods: {
     fileChange() {
       // console.log('test')
-      if(this.searchImg) {
+      if(!this.dropFlag) {
         this.searchResults = [];
         let reader = new FileReader();
         var outerScope = this;
@@ -158,16 +159,24 @@ export default {
           // console.log(this.searchImg)
           reader.readAsDataURL(this.searchImg);
         }
+      } {
+        this.dropFlag = false;
       }
 
     },
     onDrop(e) {
       const files = e.target.files || e.dataTransfer.files;
       if (!files.length) {
+
         let textURL = e.dataTransfer.getData("text");
         if (textURL != "") {
+          if (this.searchImg) {
+            this.dropFlag = true;
+              this.searchImg = null;
+          }
+
           let outerScope = this;
-          this.searchImg = null;
+
           this.showImg = false;
           this.searchImgURL = textURL;
 
@@ -188,18 +197,11 @@ export default {
       // console.log(image.image);
       // let img = image.image;
       this.searching = true;
-      let img = document.createElement("img");
-      img.crossOrigin = "Anonymous";
-      img.src = this.searchImgURL;
 
       let outerScope = this;
       // console.log(img);
 
-      var canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      var ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
 
       let queryAniList = function(result) {
         if (result.length == 0) {
@@ -271,6 +273,16 @@ export default {
       }
 
       if (this.searchImg) {
+        let img = document.createElement("img");
+        img.crossOrigin = "Anonymous";
+        img.src = this.searchImgURL;
+
+        var canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        var ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
         fetch("https://trace.moe/api/search", {
           method: "POST",
           body: JSON.stringify({ image: canvas.toDataURL("image/jpeg", 0.8) }),
