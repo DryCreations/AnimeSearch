@@ -109,6 +109,12 @@
                 </v-card>
               </v-slide-y-transition>
             </template>
+            <div v-show="searching" class="text-center mt-5">
+              <v-progress-circular
+                indeterminate
+                color="primary"
+              ></v-progress-circular>
+            </div>
           </v-flex>
         </v-layout>
       </v-container>
@@ -125,7 +131,8 @@ export default {
       searchImg: null,
       searchImgURL: "",
       showImg: false,
-      searchResults: []
+      searchResults: [],
+      searching: false
     };
   },
   methods: {
@@ -173,6 +180,7 @@ export default {
     searchImage() {
       // console.log(image.image);
       // let img = image.image;
+      this.searching = true;
       let img = document.createElement("img");
       img.crossOrigin = "Anonymous";
       img.src = this.searchImgURL;
@@ -245,11 +253,12 @@ export default {
                 r.anilist_data = data.data.Media;
                 r.show = false;
                 outerScope.searchResults.push(r);
-                console.log(r);
-              })
-              .catch(error => {
-                console.log(error);
+                // console.log(r);
+                outerScope.searching = false;
               });
+            // .catch(error => {
+            //   console.log(error);
+            // })
           });
         });
     }
